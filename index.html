@@ -1,50 +1,35 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Mini App 裁剪图片</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <style>
-        body { text-align: center; font-family: Arial, sans-serif; padding: 20px; }
-        #image-container { max-width: 100%; margin: 10px auto; }
-    </style>
+    <title>Image Cropper</title>
+    <link href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css" rel="stylesheet">
 </head>
 <body>
-    <h2>上传并裁剪图片</h2>
-    <input type="file" id="file-input" accept="image/*">
-    <div id="image-container">
-        <img id="image" src="" style="max-width:100%;" />
-    </div>
-    <button id="crop-btn">裁剪并发送</button>
+    <h1>上传的图像裁剪</h1>
+    <img id="image" src="YOUR_UPLOADED_IMAGE_URL" alt="Uploaded Image" style="max-width: 100%">
+    <button onclick="cropImage()">裁剪图像</button>
 
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs"></script>
     <script>
-        let cropper;
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // 让 WebApp 全屏显示
+        var cropper;
+        window.onload = function() {
+            var image = document.getElementById('image');
+            cropper = new Cropper(image, {
+                aspectRatio: 16 / 9,  // 可根据需要调整比例
+                viewMode: 1,
+                autoCropArea: 0.5
+            });
+        };
 
-        document.getElementById('file-input').addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const image = document.getElementById('image');
-                image.src = event.target.result;
-                if (cropper) cropper.destroy();
-                cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1 });
-            };
-            reader.readAsDataURL(file);
-        });
-
-        document.getElementById('crop-btn').addEventListener('click', function () {
-            if (!cropper) return;
-            const canvas = cropper.getCroppedCanvas();
-            const base64Image = canvas.toDataURL('image/jpeg'); // 获取 Base64 格式图片
-            tg.sendData(base64Image); // 发送 Base64 数据给 Bot
-            tg.close(); // 关闭 Mini App
-        });
+        function cropImage() {
+            var croppedCanvas = cropper.getCroppedCanvas();
+            var croppedImage = croppedCanvas.toDataURL('image/jpeg');
+            // 将裁剪后的图像发送到后端
+            console.log(croppedImage);
+            // 你可以使用fetch或AJAX将裁剪后的图像发送回服务器进行进一步处理
+        }
     </script>
 </body>
 </html>
