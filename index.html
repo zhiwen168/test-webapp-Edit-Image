@@ -1,35 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片裁剪 WebApp</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    <title>图片裁剪</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
-        body { font-family: Arial, sans-serif; }
-        .crop-container { text-align: center; }
-        .buttons { margin-top: 10px; }
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 90%;
+            margin: 10px auto;
+        }
+        img {
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .btn:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
-    <div class="crop-container">
-        <h1>裁剪图片</h1>
-        <img id="image" src="" alt="Image to crop">
-        <div class="buttons">
-            <button id="cropButton">裁剪并返回</button>
-        </div>
+
+    <div class="container">
+        <h2>图片裁剪</h2>
+        <img id="image" alt="加载图片中...">
+        <button id="cropBtn" class="btn" disabled>裁剪并上传</button>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
-        // 获取 URL 中的 file_id
-        // 获取 URL 中的 file_id
         let fileId = new URLSearchParams(window.location.search).get('file_id');
-
-        console.log("Received file_id:", fileId);
+        let imageElement = document.getElementById('image');
+        let cropBtn = document.getElementById('cropBtn');
+        let cropper;
 
         if (fileId) {
-            // 根据 file_id 获取图片
             fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/getFile?file_id=${fileId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -37,17 +57,20 @@
                         let filePath = data.result.file_path;
                         let imageUrl = `https://api.telegram.org/file/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/${filePath}`;
 
-                        // 将图片 URL 设置到 img 标签
-                        let imageElement = document.getElementById('image');
+                        // 加载图片
                         imageElement.src = imageUrl;
-
-                        // 初始化裁剪器
                         imageElement.onload = function() {
-                            new Cropper(imageElement, {
-                                aspectRatio: 1,  // 可根据需要设置裁剪比例
+                            if (cropper) {
+                                cropper.destroy(); // 防止重复初始化
+                            }
+                            cropper = new Cropper(imageElement, {
+                                aspectRatio: 1,  // 可修改裁剪比例
                                 viewMode: 1,
-                                autoCropArea: 0.8
+                                autoCropArea: 0.8,
                             });
+
+                            // 启用裁剪按钮
+                            cropBtn.disabled = false;
                         };
                     } else {
                         alert('无法获取图片，请重试。');
@@ -60,24 +83,33 @@
             alert('未找到图片 ID。');
         }
 
+        // 裁剪并上传
+        cropBtn.addEventListener('click', function() {
+            if (!cropper) return;
 
-        // 裁剪并返回
-        document.getElementById('cropButton').addEventListener('click', function() {
-            const canvas = cropper.getCroppedCanvas();
-            canvas.toBlob(function(blob) {
-                const formData = new FormData();
-                formData.append('file', blob);
+            let croppedCanvas = cropper.getCroppedCanvas();
+            croppedCanvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append('photo', blob, 'cropped.jpg');
 
-                // 发送裁剪后的图片到 Telegram bot
-                fetch('https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/sendPhoto', {
+                // 发送到 Telegram 机器人
+                fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/sendPhoto`, {
                     method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-            });
+                    body: formData
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.ok) {
+                          alert('图片裁剪成功，已发送回 Telegram！');
+                      } else {
+                          alert('图片发送失败，请重试。');
+                      }
+                  })
+                  .catch(error => {
+                      console.error('上传失败:', error);
+                  });
+            }, 'image/jpeg');
         });
     </script>
+
 </body>
 </html>
