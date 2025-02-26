@@ -23,8 +23,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script>
         // 获取 URL 中的 file_id
+        // 获取 URL 中的 file_id
         let fileId = new URLSearchParams(window.location.search).get('file_id');
-        
+
+        console.log("Received file_id:", fileId);
+
         if (fileId) {
             // 根据 file_id 获取图片
             fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/getFile?file_id=${fileId}`)
@@ -56,6 +59,7 @@
         } else {
             alert('未找到图片 ID。');
         }
+
 
         // 裁剪并返回
         document.getElementById('cropButton').addEventListener('click', function() {
