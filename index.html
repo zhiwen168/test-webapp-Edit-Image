@@ -22,24 +22,40 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script>
+        // 获取 URL 中的 file_id
         let fileId = new URLSearchParams(window.location.search).get('file_id');
-        let imageElement = document.getElementById('image');
         
-        // 获取图片并显示在页面上
-        fetch(`https://api.telegram.org/file/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/${fileId}`)
-            .then(response => response.json())
-            .then(data => {
-                imageElement.src = data.result.file_path; // 显示图片
-            });
+        if (fileId) {
+            // 根据 file_id 获取图片
+            fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/getFile?file_id=${fileId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        let filePath = data.result.file_path;
+                        let imageUrl = `https://api.telegram.org/file/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/${filePath}`;
 
-        let cropper;
-        imageElement.onload = function() {
-            cropper = new Cropper(imageElement, {
-                aspectRatio: 1,  // 可根据需要设置裁剪比例
-                viewMode: 1,
-                autoCropArea: 0.8
-            });
-        };
+                        // 将图片 URL 设置到 img 标签
+                        let imageElement = document.getElementById('image');
+                        imageElement.src = imageUrl;
+
+                        // 初始化裁剪器
+                        imageElement.onload = function() {
+                            new Cropper(imageElement, {
+                                aspectRatio: 1,  // 可根据需要设置裁剪比例
+                                viewMode: 1,
+                                autoCropArea: 0.8
+                            });
+                        };
+                    } else {
+                        alert('无法获取图片，请重试。');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取图片失败:', error);
+                });
+        } else {
+            alert('未找到图片 ID。');
+        }
 
         // 裁剪并返回
         document.getElementById('cropButton').addEventListener('click', function() {
