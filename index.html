@@ -14,6 +14,16 @@
             max-width: 90%;
             margin: 10px auto;
         }
+        #image-container {
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            margin: 10px auto;
+            position: relative;
+            overflow: hidden;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+        }
         img {
             max-width: 100%;
             display: block;
@@ -38,7 +48,9 @@
 
     <div class="container">
         <h2>图片裁剪</h2>
-        <img id="image" alt="加载图片中...">
+        <div id="image-container">
+            <img id="image" alt="加载图片中...">
+        </div>
         <button id="cropBtn" class="btn" disabled>裁剪并上传</button>
     </div>
 
@@ -64,9 +76,15 @@
                                 cropper.destroy(); // 防止重复初始化
                             }
                             cropper = new Cropper(imageElement, {
-                                aspectRatio: 1,  // 可修改裁剪比例
+                                aspectRatio: 1,  // 默认 1:1，可调整
                                 viewMode: 1,
-                                autoCropArea: 0.8,
+                                autoCropArea: 0.8, // 初始裁剪框大小
+                                movable: true, // 允许移动
+                                zoomable: true, // 允许缩放
+                                rotatable: true, // 允许旋转
+                                scalable: true, // 允许缩放
+                                cropBoxMovable: true, // 允许移动裁剪框
+                                cropBoxResizable: true // 允许调整裁剪框大小
                             });
 
                             // 启用裁剪按钮
