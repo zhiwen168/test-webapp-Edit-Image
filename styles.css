@@ -1,0 +1,41 @@
+body {
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 90%;
+    margin: 10px auto;
+}
+
+#image-container {
+    width: 100%;
+    max-width: 400px;
+    height: 400px;
+    margin: 10px auto;
+    position: relative;
+    overflow: hidden;
+    border: 2px dashed #ddd;
+    border-radius: 10px;
+}
+
+canvas {
+    max-width: 100%;
+    display: block;
+    margin: 0 auto;
+}
+
+.btn {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.btn:disabled {
+    background-color: gray;
+    cursor: not-allowed;
+}
