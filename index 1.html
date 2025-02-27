@@ -1,209 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Image Cropper</title>
-    <link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片裁剪</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
+            text-align: center;
             font-family: Arial, sans-serif;
         }
-
-        .crop-container {
-            position: relative;
+        .container {
+            max-width: 90%;
+            margin: 10px auto;
+        }
+        #image-container {
             width: 100%;
-            height: 80vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: white;
+            max-width: 400px;
+            height: 400px;
+            margin: 10px auto;
+            position: relative;
             overflow: hidden;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
         }
-
-        #image {
+        img {
             max-width: 100%;
-            max-height: 100%;
-            display: none; /* 默认隐藏 */
+            display: block;
+            margin: 0 auto;
         }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        select {
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-        }
-
-        .buttons-container {
-            position: fixed;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-        }
-
-        .button {
-            padding: 12px 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease-in-out;
-        }
-
-        .button:active {
-            transform: scale(0.95);
-        }
-
-        #cropButton {
-            background-color: #007bff;
-            color: white;
-        }
-
-        #flipButton {
+        .btn {
+            padding: 10px 20px;
             background-color: #28a745;
             color: white;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .upload-label {
-            display: block;
-            background-color: #ff9800;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-size: 16px;
-            text-align: center;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
             cursor: pointer;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn:disabled {
+            background-color: gray;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-    <label for="inputImage" class="upload-label">Upload Image</label>
-    <input type="file" id="inputImage" accept="image/*">
-    
-    <div class="controls">
-        <select id="cropSize">
-            <option value="A5">A5 (14.8cm × 21cm)</option>
-            <option value="A4">A4 (21cm × 29.7cm)</option>
-            <option value="4x6">4in × 6in</option>
-            <option value="5x7">5in × 7in</option>
-            <option value="3.5x4.5">3.5cm × 4.5cm</option>
-            <option value="2.6x3.5">2.6cm × 3.5cm</option>
-        </select>
+
+    <div class="container">
+        <h2>图片裁剪</h2>
+        <div id="image-container">
+            <img id="image" alt="加载图片中...">
+        </div>
+        <button id="cropBtn" class="btn" disabled>裁剪并上传</button>
     </div>
 
-    <div class="crop-container">
-        <img id="image" src="" alt="Image for cropping">
-    </div>
-
-    <div class="buttons-container">
-        <button id="flipButton" class="button">Flip Ratio</button>
-        <button id="cropButton" class="button">Crop Image</button>
-    </div>
-
-    <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
+        let fileId = new URLSearchParams(window.location.search).get('file_id');
+        let imageElement = document.getElementById('image');
+        let cropBtn = document.getElementById('cropBtn');
         let cropper;
-        let isFlipped = false; // 记录当前是否翻转裁剪比例
-        const image = document.getElementById('image');
-        const inputImage = document.getElementById('inputImage');
-        const cropButton = document.getElementById('cropButton');
-        const flipButton = document.getElementById('flipButton');
-        const cropSize = document.getElementById('cropSize');
 
-        const cropRatios = {
-            "A5": 14.8 / 21,
-            "A4": 21 / 29.7,
-            "4x6": 4 / 6,
-            "5x7": 5 / 7,
-            "3.5x4.5": 3.5 / 4.5,
-            "2.6x3.5": 2.6 / 3.5
-        };
+        if (fileId) {
+            fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/getFile?file_id=${fileId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        let filePath = data.result.file_path;
+                        let imageUrl = `https://api.telegram.org/file/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/${filePath}`;
 
-        inputImage.addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    image.src = event.target.result;
-                    image.style.display = 'block';
+                        // 加载图片
+                        imageElement.src = imageUrl;
+                        imageElement.onload = function() {
+                            if (cropper) {
+                                cropper.destroy(); // 防止重复初始化
+                            }
+                            cropper = new Cropper(imageElement, {
+                                aspectRatio: 1,  // 默认 1:1，可调整
+                                viewMode: 1,
+                                autoCropArea: 0.8, // 初始裁剪框大小
+                                movable: true, // 允许移动
+                                zoomable: true, // 允许缩放
+                                rotatable: true, // 允许旋转
+                                scalable: true, // 允许缩放
+                                cropBoxMovable: true, // 允许移动裁剪框
+                                cropBoxResizable: true // 允许调整裁剪框大小
+                            });
 
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = function () {
-                        const isLandscape = img.width > img.height;
-                        isFlipped = false;
-                        setCropper(isLandscape);
-                    };
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        function setCropper(isLandscape) {
-            const selectedRatio = cropRatios[cropSize.value];
-
-            if (cropper) {
-                cropper.destroy();
-            }
-
-            cropper = new Cropper(image, {
-                aspectRatio: isFlipped ? (1 / selectedRatio) : selectedRatio,
-                viewMode: 2,
-                autoCropArea: 0.9,
-            });
+                            // 启用裁剪按钮
+                            cropBtn.disabled = false;
+                        };
+                    } else {
+                        alert('无法获取图片，请重试。');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取图片失败:', error);
+                });
+        } else {
+            alert('未找到图片 ID。');
         }
 
-        cropSize.addEventListener('change', function () {
-            if (cropper) {
-                const selectedRatio = cropRatios[cropSize.value];
-                cropper.setAspectRatio(isFlipped ? (1 / selectedRatio) : selectedRatio);
-            }
-        });
+        // 裁剪并上传
+        cropBtn.addEventListener('click', function() {
+            if (!cropper) return;
 
-        flipButton.addEventListener('click', function () {
-            isFlipped = !isFlipped;
-            const selectedRatio = cropRatios[cropSize.value];
-            cropper.setAspectRatio(isFlipped ? (1 / selectedRatio) : selectedRatio);
-        });
+            let croppedCanvas = cropper.getCroppedCanvas();
+            croppedCanvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append('photo', blob, 'cropped.jpg');
 
-        cropButton.addEventListener('click', function () {
-            if (cropper) {
-                const canvas = cropper.getCroppedCanvas();
-                if (canvas) {
-                    const croppedImageData = canvas.toDataURL();
-                    console.log(croppedImageData);
-                    alert("Image cropped!");
-                }
-            }
+                // 发送到 Telegram 机器人
+                fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.ok) {
+                          alert('图片裁剪成功，已发送回 Telegram！');
+                      } else {
+                          alert('图片发送失败，请重试。');
+                      }
+                  })
+                  .catch(error => {
+                      console.error('上传失败:', error);
+                  });
+            }, 'image/jpeg');
         });
     </script>
+
 </body>
 </html>
