@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Image Cropper</title>
+    <link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+
+        .crop-container {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            overflow: hidden;
+        }
+
+        #image {
+            max-width: 100%;
+            max-height: 100%;
+            display: none; /* 默认隐藏 */
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        .buttons-container {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        #cropButton {
+            background-color: #007bff;
+            color: white;
+        }
+
+        #flipButton {
+            background-color: #28a745;
+            color: white;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            display: block;
+            background-color: #ff9800;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <label for="inputImage" class="upload-label">Upload Image</label>
+    <input type="file" id="inputImage" accept="image/*">
+    
+    <div class="controls">
+        <select id="cropSize">
+            <option value="A5">A5 (14.8cm × 21cm)</option>
+            <option value="A4">A4 (21cm × 29.7cm)</option>
+            <option value="4x6">4in × 6in</option>
+            <option value="5x7">5in × 7in</option>
+            <option value="3.5x4.5">3.5cm × 4.5cm</option>
+            <option value="2.6x3.5">2.6cm × 3.5cm</option>
+        </select>
+    </div>
+
+    <div class="crop-container">
+        <img id="image" src="" alt="Image for cropping">
+    </div>
+
+    <div class="buttons-container">
+        <button id="flipButton" class="button">Flip Ratio</button>
+        <button id="cropButton" class="button">Crop Image</button>
+    </div>
+
+    <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
+    <script>
+        let cropper;
+        let isFlipped = false; // 记录当前是否翻转裁剪比例
+        const image = document.getElementById('image');
+        const inputImage = document.getElementById('inputImage');
+        const cropButton = document.getElementById('cropButton');
+        const flipButton = document.getElementById('flipButton');
+        const cropSize = document.getElementById('cropSize');
+
+        const cropRatios = {
+            "A5": 14.8 / 21,
+            "A4": 21 / 29.7,
+            "4x6": 4 / 6,
+            "5x7": 5 / 7,
+            "3.5x4.5": 3.5 / 4.5,
+            "2.6x3.5": 2.6 / 3.5
+        };
+
+        inputImage.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    image.src = event.target.result;
+                    image.style.display = 'block';
+
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function () {
+                        const isLandscape = img.width > img.height;
+                        isFlipped = false;
+                        setCropper(isLandscape);
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function setCropper(isLandscape) {
+            const selectedRatio = cropRatios[cropSize.value];
+
+            if (cropper) {
+                cropper.destroy();
+            }
+
+            cropper = new Cropper(image, {
+                aspectRatio: isFlipped ? (1 / selectedRatio) : selectedRatio,
+                viewMode: 2,
+                autoCropArea: 0.9,
+            });
+        }
+
+        cropSize.addEventListener('change', function () {
+            if (cropper) {
+                const selectedRatio = cropRatios[cropSize.value];
+                cropper.setAspectRatio(isFlipped ? (1 / selectedRatio) : selectedRatio);
+            }
+        });
+
+        flipButton.addEventListener('click', function () {
+            isFlipped = !isFlipped;
+            const selectedRatio = cropRatios[cropSize.value];
+            cropper.setAspectRatio(isFlipped ? (1 / selectedRatio) : selectedRatio);
+        });
+
+        cropButton.addEventListener('click', function () {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas();
+                if (canvas) {
+                    const croppedImageData = canvas.toDataURL();
+                    console.log(croppedImageData);
+                    alert("Image cropped!");
+                }
+            }
+        });
+    </script>
+</body>
+</html>
