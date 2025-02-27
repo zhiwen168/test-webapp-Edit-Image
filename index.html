@@ -3,19 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片裁剪</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>图片裁剪 WebApp</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #canvas {
+            border: 1px solid black;
+            max-width: 100%;
+            display: block;
+            margin: 10px auto;
+        }
+        #fileInput, #cropBtn {
+            margin: 10px;
+            padding: 8px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #cropArea {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px;
+        }
+    </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>图片裁剪</h2>
-        <div id="image-container">
-            <canvas id="canvas"></canvas>
-        </div>
-        <button id="cropBtn" class="btn" disabled>裁剪并上传</button>
+    <h2>上传并裁剪图片</h2>
+    <input type="file" id="fileInput">
+    <div id="cropArea">
+        <canvas id="canvas"></canvas>
     </div>
+    <button id="cropBtn">裁剪</button>
 
-    <script src="script.js"></script>
+    <script>
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let img = new Image();
+        let startX, startY, endX, endY, isDragging = false;
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        img.onload = function() {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+        };
+
+        // 监听鼠标按下，开始绘制裁剪框
+        canvas.addEventListener('mousedown', function(event) {
+            startX = event.offsetX;
+            startY = event.offsetY;
+            isDragging = true;
+        });
+
+        // 鼠标移动，绘制框选区域
+        canvas.addEventListener('mousemove', function(event) {
+            if (isDragging) {
+                endX = event.offsetX;
+                endY = event.offsetY;
+                redrawCanvas();
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(startX, startY, endX - startX, endY - startY);
+            }
+        });
+
+        // 鼠标松开，停止绘制
+        canvas.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+        }
+
+        // 裁剪功能
+        document.getElementById('cropBtn').addEventListener('click', function() {
+            if (startX && startY && endX && endY) {
+                let width = endX - startX;
+                let height = endY - startY;
+                let croppedImageData = ctx.getImageData(startX, startY, width, height);
+
+                let tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                let tempCtx = tempCanvas.getContext('2d');
+                tempCtx.putImageData(croppedImageData, 0, 0);
+
+                let croppedImg = new Image();
+                croppedImg.src = tempCanvas.toDataURL('image/png');
+                document.body.appendChild(croppedImg);
+            }
+        });
+
+    </script>
+
 </body>
 </html>
