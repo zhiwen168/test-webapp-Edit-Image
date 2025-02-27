@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片裁剪</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        .container { max-width: 90%; margin: 10px auto; }
+        img { max-width: 100%; display: block; margin: 0 auto; }
+        .btn, .select { padding: 10px; margin-top: 10px; cursor: pointer; }
+        .btn { background-color: #28a745; color: white; border: none; border-radius: 5px; }
+        .btn:disabled { background-color: gray; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>图片裁剪</h2>
+        <select id="aspectRatio" class="select">
+            <option value="1">正方形 (1:1)</option>
+            <option value="0.707">A4 (0.707:1)</option>
+            <option value="0.667">4×6 (2:3)</option>
+            <option value="0.714">5×7 (5:7)</option>
+            <option value="0.778">3.5×4.5cm</option>
+        </select>
+        <img id="image" alt="加载图片中...">
+        <button id="cropBtn" class="btn" disabled>裁剪并上传</button>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        let fileId = new URLSearchParams(window.location.search).get('file_id');
+        let imageElement = document.getElementById('image');
+        let cropBtn = document.getElementById('cropBtn');
+        let aspectRatioSelect = document.getElementById('aspectRatio');
+        let cropper;
+
+        if (fileId) {
+            fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/getFile?file_id=${fileId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        imageElement.src = data.imageUrl;
+                        imageElement.onload = function() {
+                            if (cropper) cropper.destroy();
+                            cropper = new Cropper(imageElement, {
+                                aspectRatio: parseFloat(aspectRatioSelect.value),
+                                viewMode: 1,
+                                autoCropArea: 0.8,
+                            });
+                            cropBtn.disabled = false;
+                        };
+                    } else {
+                        alert('无法获取图片，请重试。');
+                    }
+                })
+                .catch(error => console.error('获取图片失败:', error));
+        } else {
+            alert('未找到图片 ID。');
+        }
+
+        aspectRatioSelect.addEventListener('change', function() {
+            if (cropper) {
+                cropper.setAspectRatio(parseFloat(this.value));
+            }
+        });
+
+        cropBtn.addEventListener('click', function() {
+            if (!cropper) return;
+       'POST',
+                    body: formData
+                })
+                   }
+                 .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        alert('图片裁剪成功，已发送回 Telegram！');
+                    } else {
+                        alert('图片发送失败，请重试。');
+                })      let croppedCanvas = cropper.getCroppedCanvas();
+            croppedCanvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append('photo', blob, 'cropped.jpg');
+                fetch('/api/uploadImage', {
+                    method:
+                .catch(error => console.error('上传失败:', error));
+            }, 'image/jpeg');
+        });
+    </script>
+</body>
+</html>
