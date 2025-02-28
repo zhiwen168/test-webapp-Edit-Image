@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片裁剪 - Cropper.js</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <title>图片裁剪 - Jcrop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jcrop/2.0.0/css/Jcrop.min.css">
     <style>
         body {
             display: flex;
@@ -16,7 +16,7 @@
         }
         #image {
             max-width: 100%;
-            max-height: 80vh;  /* 确保图片适应屏幕 */
+            max-height: 80vh;
             display: block;
         }
     </style>
@@ -24,8 +24,8 @@
 <body>
 
     <img id="image" src="" alt="图片加载中...">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jcrop/2.0.0/js/Jcrop.min.js"></script>
     <script>
         const params = new URLSearchParams(window.location.search);
         const imageUrl = params.get('image_url');
@@ -35,14 +35,14 @@
         image.src = imageUrl;
 
         image.onload = function () {
-            // 确保图片加载完成后初始化裁剪
-            const cropper = new Cropper(image, {
-                aspectRatio: 16 / 9,   // 默认 16:9 比例
-                viewMode: 1,           // 限制裁剪框范围
-                autoCrop: true,        // 启用自动裁剪框
-                dragMode: 'move',      // 拖动模式
-                scalable: true,        // 允许缩放
-                rotatable: true        // 允许旋转
+            // 初始化 Jcrop 裁剪框
+            $('#image').Jcrop({
+                aspectRatio: 16 / 9,   // 设置裁剪框的长宽比
+                setSelect: [100, 100, 400, 400], // 初始裁剪框的位置和大小
+                minSize: [100, 100],  // 最小裁剪框大小
+                onSelect: function(c) {  // 获取裁剪框的选中区域
+                    console.log(c);
+                }
             });
         }
     </script>
