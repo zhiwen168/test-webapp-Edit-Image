@@ -1,51 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片裁剪 - Jcrop</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jcrop/2.0.0/css/Jcrop.min.css">
+    <title>图片裁剪</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f5f5f5;
+            text-align: center;
+            font-family: Arial, sans-serif;
         }
-        #image {
+        .container {
+            margin-top: 20px;
+        }
+        img {
             max-width: 100%;
-            max-height: 80vh;
             display: block;
+            margin: 0 auto;
+        }
+        .btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <img id="image" alt="加载中..." />
+        <button id="cropButton" class="btn">裁剪并下载</button>
+    </div>
 
-    <img id="image" src="" alt="图片加载中...">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jcrop/2.0.0/js/Jcrop.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const imageUrl = params.get('image_url');
-        const image = document.getElementById('image');
+        document.addEventListener("DOMContentLoaded", function () {
+            // 从 URL 获取参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const imageUrl = urlParams.get("image_url");
 
-        // 设置图片源
-        image.src = imageUrl;
+            if (!imageUrl) {
+                alert("未提供图片 URL");
+                return;
+            }
 
-        image.onload = function () {
-            // 初始化 Jcrop 裁剪框
-            $('#image').Jcrop({
-                aspectRatio: 16 / 9,   // 设置裁剪框的长宽比
-                setSelect: [100, 100, 400, 400], // 初始裁剪框的位置和大小
-                minSize: [100, 100],  // 最小裁剪框大小
-                onSelect: function(c) {  // 获取裁剪框的选中区域
-                    console.log(c);
+            const image = document.getElementById("image");
+            image.src = imageUrl;
+
+            let cropper;
+
+            // 确保图片加载完成后再初始化 Cropper.js
+            image.onload = function () {
+                cropper = new Cropper(image, {
+                    aspectRatio: NaN, // 允许自由裁剪
+                    viewMode: 1, // 限制裁剪框不超出原图
+                    autoCropArea: 0.8, // 默认裁剪区域 80%
+                });
+            };
+
+            // 裁剪并下载
+            document.getElementById("cropButton").addEventListener("click", function () {
+                if (!cropper) return;
+
+                const croppedCanvas = cropper.getCroppedCanvas();
+                if (croppedCanvas) {
+                    const croppedImage = croppedCanvas.toDataURL("image/png");
+
+                    // 创建下载链接
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = croppedImage;
+                    downloadLink.download = "cropped-image.png";
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
                 }
             });
-        }
+        });
     </script>
-
 </body>
 </html>
