@@ -47,31 +47,33 @@
         // 获取 URL 参数，加载图片
         const params = new URLSearchParams(window.location.search);
         const imageUrl = params.get('image_url');
-        document.getElementById('image').src = imageUrl;
-
-        // 初始化 Cropper.js
         const image = document.getElementById('image');
-        const cropper = new Cropper(image, {
-            aspectRatio: 16 / 9,
-            viewMode: 1,
-            scalable: false,
-            rotatable: true
-        });
 
-        // 裁剪按钮事件
-        document.getElementById('cropButton').addEventListener('click', function() {
-            const croppedCanvas = cropper.getCroppedCanvas();
-            // 将裁剪后的图像转换为 DataURL
-            const croppedImage = croppedCanvas.toDataURL();
-            // 可以在这里将裁剪后的图像上传回 Telegram 服务器或做进一步处理
-            alert('裁剪完成，您可以上传图片！');
-            console.log(croppedImage);
-        });
+        // 等待图片加载完成再初始化 cropper
+        image.onload = function() {
+            const cropper = new Cropper(image, {
+                aspectRatio: 16 / 9,
+                viewMode: 1,
+                scalable: false,
+                rotatable: true
+            });
 
-        // 旋转按钮事件
-        document.getElementById('rotateButton').addEventListener('click', function() {
-            cropper.rotate(90);  // 每次点击旋转 90 度
-        });
+            // 裁剪按钮事件
+            document.getElementById('cropButton').addEventListener('click', function() {
+                const croppedCanvas = cropper.getCroppedCanvas();
+                const croppedImage = croppedCanvas.toDataURL();
+                alert('裁剪完成，您可以上传图片！');
+                console.log(croppedImage);
+            });
+
+            // 旋转按钮事件
+            document.getElementById('rotateButton').addEventListener('click', function() {
+                cropper.rotate(90);  // 每次点击旋转 90 度
+            });
+        }
+
+        // 设置图片源
+        image.src = imageUrl;
     </script>
 </body>
 </html>
