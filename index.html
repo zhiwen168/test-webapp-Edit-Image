@@ -16,9 +16,15 @@
             margin: 0;
             background-color: #f8f9fa;
         }
+        .container {
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
         img {
             max-width: 100%;
-            max-height: 400px;
             display: none;
         }
         .btn {
@@ -31,11 +37,17 @@
             border-radius: 5px;
             display: none;
         }
+        .cropper-container {
+            width: 100%;
+            max-height: 400px;
+        }
     </style>
 </head>
 <body>
-    <img id="image">
-    <button class="btn" id="cropButton">裁剪</button>
+    <div class="container">
+        <img id="image">
+        <button class="btn" id="cropButton">裁剪</button>
+    </div>
     <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
@@ -49,7 +61,16 @@
             image.src = imageUrl;
             image.style.display = 'block';
             image.onload = () => {
-                cropper = new Cropper(image, { aspectRatio: 1 });
+                cropper = new Cropper(image, { 
+                    aspectRatio: NaN, // 允许自由裁剪
+                    viewMode: 2,
+                    movable: true,
+                    zoomable: true,
+                    scalable: true,
+                    responsive: true,
+                    dragMode: 'move',
+                    background: false
+                });
                 cropButton.style.display = 'block';
             };
         }
