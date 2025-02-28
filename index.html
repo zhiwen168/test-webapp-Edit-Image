@@ -16,8 +16,9 @@
         }
         #image {
             max-width: 100%;
-            max-height: 80vh;
+            height: auto;
             display: block;
+            margin: 0 auto;
         }
         .buttons {
             position: fixed;
@@ -49,31 +50,35 @@
         const imageUrl = params.get('image_url');
         const image = document.getElementById('image');
 
-        // 等待图片加载完成再初始化 cropper
-        image.onload = function() {
-            const cropper = new Cropper(image, {
-                aspectRatio: 16 / 9,
-                viewMode: 1,
-                scalable: false,
-                rotatable: true
-            });
-
-            // 裁剪按钮事件
-            document.getElementById('cropButton').addEventListener('click', function() {
-                const croppedCanvas = cropper.getCroppedCanvas();
-                const croppedImage = croppedCanvas.toDataURL();
-                alert('裁剪完成，您可以上传图片！');
-                console.log(croppedImage);
-            });
-
-            // 旋转按钮事件
-            document.getElementById('rotateButton').addEventListener('click', function() {
-                cropper.rotate(90);  // 每次点击旋转 90 度
-            });
-        }
-
         // 设置图片源
         image.src = imageUrl;
+
+        // 等待图片加载完成再初始化 cropper
+        image.onload = function () {
+            setTimeout(function () {
+                const cropper = new Cropper(image, {
+                    aspectRatio: 16 / 9,
+                    viewMode: 1,
+                    scalable: true,   // 开启缩放
+                    rotatable: true,  // 开启旋转
+                    autoCrop: true,   // 启用自动裁剪框
+                    responsive: true  // 响应式布局
+                });
+
+                // 裁剪按钮事件
+                document.getElementById('cropButton').addEventListener('click', function() {
+                    const croppedCanvas = cropper.getCroppedCanvas();
+                    const croppedImage = croppedCanvas.toDataURL();
+                    alert('裁剪完成，您可以上传图片！');
+                    console.log(croppedImage);
+                });
+
+                // 旋转按钮事件
+                document.getElementById('rotateButton').addEventListener('click', function() {
+                    cropper.rotate(90);  // 每次点击旋转 90 度
+                });
+            }, 1000);  // 延迟 1 秒钟后初始化裁剪
+        };
     </script>
 </body>
 </html>
