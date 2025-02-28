@@ -3,63 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片裁剪</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <title>图片裁剪工具</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        img { max-width: 100%; }
-        .crop-container { max-width: 400px; margin: auto; }
-        button { margin: 10px; padding: 8px 15px; font-size: 16px; }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f9fa;
+        }
+        img {
+            max-width: 100%;
+            max-height: 400px;
+            display: none;
+        }
+        .btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
-
-    <h2>图片裁剪工具</h2>
-    <div class="crop-container">
-        <img id="image" src="" alt="加载中...">
-    </div>
-
-    <button id="crop-btn">裁剪并下载</button>
+    <img id="image">
+    <button class="btn" id="cropButton">裁剪</button>
+    <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
-        // 获取 URL 参数中的 image_url
-        function getQueryParam(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-
-        const imageUrl = getQueryParam("image_url");
-        if (!imageUrl) {
-            alert("未找到图片！");
-        } else {
-            document.getElementById("image").src = imageUrl;
-        }
-
-        // 初始化 Cropper.js
-        let image = document.getElementById('image');
+        const urlParams = new URLSearchParams(window.location.search);
+        const imageUrl = urlParams.get('image_url');
+        const image = document.getElementById('image');
+        const cropButton = document.getElementById('cropButton');
         let cropper;
 
-        image.onload = function () {
-            cropper = new Cropper(image, {
-                aspectRatio: 1, // 1:1 比例裁剪
-                viewMode: 2,
-                dragMode: "move"
-            });
-        };
+        if (imageUrl) {
+            image.src = imageUrl;
+            image.style.display = 'block';
+            image.onload = () => {
+                cropper = new Cropper(image, { aspectRatio: 1 });
+                cropButton.style.display = 'block';
+            };
+        }
 
-        // 裁剪并下载图片
-        document.getElementById("crop-btn").addEventListener("click", function () {
-            let canvas = cropper.getCroppedCanvas();
-            let croppedImage = canvas.toDataURL("image/png");
-
-            // 创建下载链接
-            let link = document.createElement("a");
-            link.href = croppedImage;
-            link.download = "cropped-image.png";
-            link.click();
+        cropButton.addEventListener('click', () => {
+            const canvas = cropper.getCroppedCanvas();
+            canvas.toBlob(blob => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'cropped-image.png';
+                a.click();
+            }, 'image/png');
         });
     </script>
-
 </body>
 </html>
