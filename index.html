@@ -3,181 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片裁剪 WebApp</title>
+    <title>图片裁剪工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
         body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        #container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 20px;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f9fa;
         }
-        #fileInput {
-            margin: 10px;
-            padding: 8px 15px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        #canvasContainer {
-            position: relative;
-            width: 90%;
-            max-width: 600px;
-            overflow: hidden;
-        }
-        canvas {
+        img {
             max-width: 100%;
-            display: block;
+            max-height: 400px;
         }
-        #cropArea {
-            position: absolute;
-            border: 2px dashed red;
-            cursor: move;
-        }
-        #controls {
-            margin: 15px;
-        }
-        button {
-            padding: 8px 15px;
-            margin: 5px;
-            font-size: 16px;
+        .btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
             cursor: pointer;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-
-    <div id="container">
-        <h2>图片裁剪 WebApp</h2>
-        <input type="file" id="fileInput">
-        
-        <div id="canvasContainer">
-            <canvas id="canvas"></canvas>
-            <div id="cropArea"></div>
-        </div>
-
-        <div id="controls">
-            <button onclick="rotateImage()">旋转</button>
-            <button onclick="cropImage()">裁剪</button>
-        </div>
-    </div>
+    <img id="image" style="display: none;">
+    <button class="btn" id="cropButton" style="display: none;">裁剪</button>
+    <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
-        let canvas = document.getElementById('canvas');
-        let ctx = canvas.getContext('2d');
-        let cropArea = document.getElementById('cropArea');
-        let img = new Image();
-        let rotation = 0;
-        let cropBox = { x: 50, y: 50, width: 200, height: 200 };
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileId = urlParams.get('file_id');
+        const image = document.getElementById('image');
+        const cropButton = document.getElementById('cropButton');
+        let cropper;
 
-        document.getElementById('fileInput').addEventListener('change', function(event) {
-            let file = event.target.files[0];
-            if (file) {
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        img.onload = function() {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-            resetCropBox();
-        };
-
-        function resetCropBox() {
-            cropBox.width = canvas.width / 2;
-            cropBox.height = canvas.height / 2;
-            cropBox.x = (canvas.width - cropBox.width) / 2;
-            cropBox.y = (canvas.height - cropBox.height) / 2;
-            updateCropBox();
+        if (fileId) {
+            fetch(`https://api.telegram.org/file/bot<TOKEN>/photos/${fileId}.jpg`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const imageUrl = URL.createObjectURL(blob);
+                    image.src = imageUrl;
+                    image.style.display = 'block';
+                    cropper = new Cropper(image, { aspectRatio: 1 });
+                    cropButton.style.display = 'block';
+                })
+                .catch(error => console.error('图片加载失败', error));
         }
 
-        function updateCropBox() {
-            cropArea.style.width = cropBox.width + "px";
-            cropArea.style.height = cropBox.height + "px";
-            cropArea.style.left = cropBox.x + "px";
-            cropArea.style.top = cropBox.y + "px";
-        }
-
-        function rotateImage() {
-            rotation = (rotation + 90) % 360;
-            let tempCanvas = document.createElement("canvas");
-            let tempCtx = tempCanvas.getContext("2d");
-
-            if (rotation % 180 === 0) {
-                tempCanvas.width = img.width;
-                tempCanvas.height = img.height;
-            } else {
-                tempCanvas.width = img.height;
-                tempCanvas.height = img.width;
-            }
-
-            tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
-            tempCtx.rotate((rotation * Math.PI) / 180);
-            tempCtx.drawImage(img, -img.width / 2, -img.height / 2);
-            canvas.width = tempCanvas.width;
-            canvas.height = tempCanvas.height;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(tempCanvas, 0, 0);
-            resetCropBox();
-        }
-
-        function cropImage() {
-            let tempCanvas = document.createElement("canvas");
-            tempCanvas.width = cropBox.width;
-            tempCanvas.height = cropBox.height;
-            let tempCtx = tempCanvas.getContext("2d");
-            tempCtx.drawImage(
-                canvas,
-                cropBox.x, cropBox.y, cropBox.width, cropBox.height,
-                0, 0, cropBox.width, cropBox.height
-            );
-
-            let croppedImg = new Image();
-            croppedImg.src = tempCanvas.toDataURL("image/png");
-            document.body.appendChild(croppedImg);
-        }
-
-        // 让裁剪框可以拖动
-        let isDragging = false;
-        let offsetX, offsetY;
-
-        cropArea.addEventListener("mousedown", function(event) {
-            isDragging = true;
-            offsetX = event.clientX - cropBox.x;
-            offsetY = event.clientY - cropBox.y;
+        cropButton.addEventListener('click', () => {
+            const canvas = cropper.getCroppedCanvas();
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('file', blob, 'cropped-image.png');
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json())
+                .then(data => console.log('上传成功', data))
+                .catch(error => console.error('上传失败', error));
+            }, 'image/png');
         });
-
-        window.addEventListener("mousemove", function(event) {
-            if (isDragging) {
-                cropBox.x = event.clientX - offsetX;
-                cropBox.y = event.clientY - offsetY;
-                updateCropBox();
-            }
-        });
-
-        window.addEventListener("mouseup", function() {
-            isDragging = false;
-        });
-
-        // 让裁剪框可以调整大小
-        cropArea.addEventListener("wheel", function(event) {
-            event.preventDefault();
-            let scaleFactor = event.deltaY > 0 ? 0.9 : 1.1;
-            cropBox.width *= scaleFactor;
-            cropBox.height *= scaleFactor;
-            updateCropBox();
-        });
-
     </script>
-
 </body>
 </html>
