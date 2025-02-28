@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片编辑 - Cropper.js</title>
+    <title>图片裁剪 - Cropper.js</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
         body {
@@ -16,36 +16,17 @@
         }
         #image {
             max-width: 100%;
-            height: auto;
+            max-height: 80vh;  /* 确保图片适应屏幕 */
             display: block;
-            margin: 0 auto;
-        }
-        .buttons {
-            position: fixed;
-            bottom: 10px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-        .buttons button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <img id="image" src="" alt="Image to crop">
-    <div class="buttons">
-        <button id="cropButton">裁剪</button>
-        <button id="rotateButton">旋转</button>
-    </div>
-
+    <img id="image" src="" alt="图片加载中...">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
-        // 获取 URL 参数，加载图片
         const params = new URLSearchParams(window.location.search);
         const imageUrl = params.get('image_url');
         const image = document.getElementById('image');
@@ -53,32 +34,18 @@
         // 设置图片源
         image.src = imageUrl;
 
-        // 等待图片加载完成再初始化 cropper
         image.onload = function () {
-            setTimeout(function () {
-                const cropper = new Cropper(image, {
-                    aspectRatio: 16 / 9,
-                    viewMode: 1,
-                    scalable: true,   // 开启缩放
-                    rotatable: true,  // 开启旋转
-                    autoCrop: true,   // 启用自动裁剪框
-                    responsive: true  // 响应式布局
-                });
-
-                // 裁剪按钮事件
-                document.getElementById('cropButton').addEventListener('click', function() {
-                    const croppedCanvas = cropper.getCroppedCanvas();
-                    const croppedImage = croppedCanvas.toDataURL();
-                    alert('裁剪完成，您可以上传图片！');
-                    console.log(croppedImage);
-                });
-
-                // 旋转按钮事件
-                document.getElementById('rotateButton').addEventListener('click', function() {
-                    cropper.rotate(90);  // 每次点击旋转 90 度
-                });
-            }, 1000);  // 延迟 1 秒钟后初始化裁剪
-        };
+            // 确保图片加载完成后初始化裁剪
+            const cropper = new Cropper(image, {
+                aspectRatio: 16 / 9,   // 默认 16:9 比例
+                viewMode: 1,           // 限制裁剪框范围
+                autoCrop: true,        // 启用自动裁剪框
+                dragMode: 'move',      // 拖动模式
+                scalable: true,        // 允许缩放
+                rotatable: true        // 允许旋转
+            });
+        }
     </script>
+
 </body>
 </html>
