@@ -56,38 +56,37 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
-        let fileId = new URLSearchParams(window.location.search).get('file_id');
+        let urlParams = new URLSearchParams(window.location.search);
+        let fileId = urlParams.get('file_id');
+        let chatId = urlParams.get('chat_id');
         let imageElement = document.getElementById('image');
         let cropBtn = document.getElementById('cropBtn');
         let cropper;
+        let token = "your_telegram_bot_token"; // 在部署前替换为真实 Token 或用环境变量处理
 
         if (fileId) {
-            fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/getFile?file_id=${fileId}`)
+            fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.ok) {
                         let filePath = data.result.file_path;
-                        let imageUrl = `https://api.telegram.org/file/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/${filePath}`;
+                        let imageUrl = `https://api.telegram.org/file/bot${token}/${filePath}`;
 
                         // 加载图片
                         imageElement.src = imageUrl;
                         imageElement.onload = function() {
-                            if (cropper) {
-                                cropper.destroy(); // 防止重复初始化
-                            }
                             cropper = new Cropper(imageElement, {
                                 aspectRatio: 1,  // 默认 1:1，可调整
                                 viewMode: 1,
                                 autoCropArea: 0.8, // 初始裁剪框大小
-                                movable: true, // 允许移动
-                                zoomable: true, // 允许缩放
-                                rotatable: true, // 允许旋转
-                                scalable: true, // 允许缩放
-                                cropBoxMovable: true, // 允许移动裁剪框
-                                cropBoxResizable: true // 允许调整裁剪框大小
+                                movable: true, 
+                                zoomable: true, 
+                                rotatable: true, 
+                                scalable: true, 
+                                cropBoxMovable: true, 
+                                cropBoxResizable: true 
                             });
 
-                            // 启用裁剪按钮
                             cropBtn.disabled = false;
                         };
                     } else {
@@ -109,9 +108,9 @@
             croppedCanvas.toBlob(blob => {
                 let formData = new FormData();
                 formData.append('photo', blob, 'cropped.jpg');
+                formData.append('chat_id', chatId); // 发送回原聊天
 
-                // 发送到 Telegram 机器人
-                fetch(`https://api.telegram.org/bot7203250432:AAEHdEZHk4MXWnyFXkY_Soh-kDEcoOLncW0/sendPhoto`, {
+                fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
                     method: 'POST',
                     body: formData
                 }).then(response => response.json())
