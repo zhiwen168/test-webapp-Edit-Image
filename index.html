@@ -1,63 +1,51 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram 图片裁剪</title>
+    <title>Image Cropper</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        #container { max-width: 400px; margin: auto; }
-        img { max-width: 100%; }
-        .btn { margin-top: 10px; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
-        .btn:disabled { background: #ccc; }
+        #image {
+            max-width: 100%;
+            height: auto;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
-    <h2>裁剪 Telegram 图片</h2>
-    <div id="container">
-        <img id="image" alt="加载中...">
-        <button id="cropBtn" class="btn" disabled>裁剪并下载</button>
+    <div class="container">
+        <img id="image" src="" alt="Image to crop">
     </div>
+    <button id="crop-btn">Crop Image</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
-        // 从 URL 获取 Telegram 图片链接
-        const urlParams = new URLSearchParams(window.location.search);
-        const telegramImageUrl = urlParams.get('image_url'); // 机器人传来的图片 URL
+        // 从 URL 获取图片
+        const imageUrl = new URLSearchParams(window.location.search).get('image');
+        const imageElement = document.getElementById('image');
 
-        const image = document.getElementById('image');
-        const cropBtn = document.getElementById('cropBtn');
-        let cropper;
+        // 确保图片加载完成后再初始化 Cropper.js
+        imageElement.src = imageUrl;
+        imageElement.onload = function() {
+            const cropper = new Cropper(imageElement, {
+                aspectRatio: 1, // 设置裁剪比例，1:1
+                viewMode: 1,    // 限制裁剪框在图片范围内
+            });
 
-        if (telegramImageUrl) {
-            fetch(telegramImageUrl)
-                .then(response => response.blob())
-                .then(blob => {
-                    const objectURL = URL.createObjectURL(blob);
-                    image.src = objectURL;
+            // 点击按钮进行裁剪
+            document.getElementById('crop-btn').addEventListener('click', function() {
+                const croppedCanvas = cropper.getCroppedCanvas();
+                const croppedImage = croppedCanvas.toDataURL('image/png');
 
-                    image.onload = () => {
-                        cropper = new Cropper(image, { aspectRatio: 16 / 9 });
-                        cropBtn.disabled = false;
-                    };
-                })
-                .catch(error => console.error("图片加载失败", error));
-        } else {
-            alert("未检测到 Telegram 图片 URL！");
-        }
-
-        // 裁剪并下载图片
-        cropBtn.addEventListener("click", () => {
-            if (!cropper) return;
-            const croppedCanvas = cropper.getCroppedCanvas();
-            const croppedImageURL = croppedCanvas.toDataURL("image/png");
-
-            const link = document.createElement("a");
-            link.href = croppedImageURL;
-            link.download = "cropped_image.png";
-            link.click();
-        });
+                // 你可以在这里处理裁剪后的图片，比如上传到服务器
+                console.log(croppedImage);
+                alert('Image cropped! Check console for the cropped image data URL.');
+            });
+        };
     </script>
 </body>
 </html>
