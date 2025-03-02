@@ -1,104 +1,86 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片裁剪</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            flex-direction: column;
-        }
-        #image {
-            max-width: 100%;
-            max-height: 80vh;
-        }
-        #cropButton {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        #cropButton:hover {
-            background-color: #45a049;
-        }
-        .download-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .download-btn:hover {
-            background-color: #0056b3;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片裁剪工具</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <style>
+    /* 添加简单样式 */
+    .container {
+      text-align: center;
+      padding: 20px;
+    }
+    #image {
+      max-width: 100%;
+      margin-top: 20px;
+    }
+    .btn {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>裁剪你的图片</h1>
+    <!-- 上传图片按钮 -->
+    <input type="file" id="inputImage" accept="image/*">
+    <div>
+      <!-- 显示图片 -->
+      <img id="image" src="" alt="上传的图片" style="display:none;">
+    </div>
+    <button class="btn" id="cropButton" style="display:none;">裁剪并下载</button>
+  </div>
 
-    <h1>裁剪图片</h1>
-    <input type="file" id="uploadImage" accept="image/*">
-    <img id="image" src="" alt="图片裁剪区域">
-    <button id="cropButton">裁剪</button>
-    <button class="download-btn" id="downloadButton" style="display:none;">下载裁剪后图片</button>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <script>
+    let cropper; // Cropper.js 实例
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script>
-        let cropper;
-        const imageElement = document.getElementById('image');
-        const uploadImageInput = document.getElementById('uploadImage');
-        const cropButton = document.getElementById('cropButton');
-        const downloadButton = document.getElementById('downloadButton');
+    // 监听图片上传
+    document.getElementById('inputImage').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const image = document.getElementById('image');
+          image.src = event.target.result;
+          image.style.display = 'block';
 
-        // 上传图片
-        uploadImageInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file && file.type.startsWith('image')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imageElement.src = e.target.result;
-
-                    // 确保图片加载完成后再初始化裁剪工具
-                    imageElement.onload = function() {
-                        if (cropper) {
-                            cropper.destroy();  // 销毁之前的 Cropper 实例
-                        }
-                        cropper = new Cropper(imageElement, {
-                            aspectRatio: 1,  // 可根据需要设置裁剪比例
-                            viewMode: 1,
-                            minCropBoxWidth: 100,
-                            minCropBoxHeight: 100,
-                        });
-                    };
-                };
-                reader.readAsDataURL(file);
+          // 确保图片加载完后再初始化 Cropper.js
+          image.onload = function () {
+            if (cropper) {
+              cropper.destroy(); // 销毁已有的 Cropper 实例
             }
-        });
-
-        // 裁剪并下载图片
-        cropButton.addEventListener('click', function() {
-            const canvas = cropper.getCroppedCanvas();
-            const croppedImage = canvas.toDataURL();
-            downloadButton.style.display = 'inline-block';
-
-            // 下载裁剪后的图片
-            downloadButton.addEventListener('click', function() {
-                const link = document.createElement('a');
-                link.href = croppedImage;
-                link.download = 'cropped-image.png';
-                link.click();
+            cropper = new Cropper(image, {
+              aspectRatio: 16 / 9,  // 默认裁剪比例，你可以修改
+              viewMode: 1,  // 控制裁剪区域
             });
-        });
-    </script>
 
+            // 显示裁剪按钮
+            document.getElementById('cropButton').style.display = 'inline-block';
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // 处理裁剪后的图片并下载
+    document.getElementById('cropButton').addEventListener('click', function () {
+      if (cropper) {
+        const canvas = cropper.getCroppedCanvas();
+        canvas.toBlob(function (blob) {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'cropped-image.png';  // 设置下载文件名
+          link.click();  // 自动触发下载
+        });
+      }
+    });
+  </script>
 </body>
 </html>
