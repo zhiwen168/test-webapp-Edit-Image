@@ -3,78 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片裁剪</title>
+    <title>Telegram 图片裁剪</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
-        body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            margin-top: 20px;
-        }
-        img {
-            max-width: 100%;
-            display: block;
-            margin: 0 auto;
-        }
-        .btn {
-            margin-top: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #container { max-width: 400px; margin: auto; }
+        img { max-width: 100%; }
+        .btn { margin-top: 10px; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .btn:disabled { background: #ccc; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img id="image" alt="加载中..." />
-        <button id="cropButton" class="btn">裁剪并下载</button>
+    <h2>裁剪 Telegram 图片</h2>
+    <div id="container">
+        <img id="image" alt="加载中...">
+        <button id="cropBtn" class="btn" disabled>裁剪并下载</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // 从 URL 获取参数
-            const urlParams = new URLSearchParams(window.location.search);
-            const imageUrl = urlParams.get("image_url");
+        // 从 URL 获取 Telegram 图片链接
+        const urlParams = new URLSearchParams(window.location.search);
+        const telegramImageUrl = urlParams.get('image_url'); // 机器人传来的图片 URL
 
-            if (!imageUrl) {
-                alert("未提供图片 URL");
-                return;
-            }
+        const image = document.getElementById('image');
+        const cropBtn = document.getElementById('cropBtn');
+        let cropper;
 
-            const image = document.getElementById("image");
-            image.src = imageUrl;
+        if (telegramImageUrl) {
+            fetch(telegramImageUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const objectURL = URL.createObjectURL(blob);
+                    image.src = objectURL;
 
-            let cropper;
+                    image.onload = () => {
+                        cropper = new Cropper(image, { aspectRatio: 16 / 9 });
+                        cropBtn.disabled = false;
+                    };
+                })
+                .catch(error => console.error("图片加载失败", error));
+        } else {
+            alert("未检测到 Telegram 图片 URL！");
+        }
 
-            // 确保图片加载完成后再初始化 Cropper.js
-            image.onload = function () {
-                cropper = new Cropper(image, {
-                    aspectRatio: NaN, // 允许自由裁剪
-                    viewMode: 1, // 限制裁剪框不超出原图
-                    autoCropArea: 0.8, // 默认裁剪区域 80%
-                });
-            };
+        // 裁剪并下载图片
+        cropBtn.addEventListener("click", () => {
+            if (!cropper) return;
+            const croppedCanvas = cropper.getCroppedCanvas();
+            const croppedImageURL = croppedCanvas.toDataURL("image/png");
 
-            // 裁剪并下载
-            document.getElementById("cropButton").addEventListener("click", function () {
-                if (!cropper) return;
-
-                const croppedCanvas = cropper.getCroppedCanvas();
-                if (croppedCanvas) {
-                    const croppedImage = croppedCanvas.toDataURL("image/png");
-
-                    // 创建下载链接
-                    const downloadLink = document.createElement("a");
-                    downloadLink.href = croppedImage;
-                    downloadLink.download = "cropped-image.png";
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                }
-            });
+            const link = document.createElement("a");
+            link.href = croppedImageURL;
+            link.download = "cropped_image.png";
+            link.click();
         });
     </script>
 </body>
