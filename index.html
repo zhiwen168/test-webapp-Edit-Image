@@ -76,14 +76,45 @@
     padding: 5px;
     border-radius: 5px;
     }
+
+    .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    padding: 10px 15px;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 999;
+    }
+
+    #total-price {
+    font-size: 18px;
+    color: #333;
+    }
+
+    #view-order {
+    padding: 10px 20px;
+    background: #28a745;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    }
+
   </style>
 </head>
 <body>
   <h1>☕ 咖啡菜单</h1>
   <div class="menu-grid" id="menu"></div>
-  <div id="total-price" style="margin-top: 15px; font-size: 18px; text-align: center;">
-    总价：0 ៛
+  <div class="bottom-bar">
+    <div id="total-price">总价：0 ៛</div>
+    <button id="view-order" onclick="submitOrder()">查看订单</button>
   </div>
+  
   
 
   <button id="view-order" onclick="submitOrder()">查看订单</button>
