@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>咖啡厅菜单</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 20px; background: #f1f1f1; }
+    /* 网格布局：自适应列数，最小宽度150px */
+    .menu-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+      gap: 15px; 
+    }
+    .menu-item { 
+      background: white; 
+      border-radius: 10px; 
+      padding: 10px; 
+      text-align: center; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 220px; /* 固定高度保证布局一致 */
+    }
+    .menu-item img { width: 60px; height: 60px; margin: 0 auto; }
+    .item-name { margin-top: 8px; font-weight: bold; font-size: 16px; }
+    .item-price { margin: 5px 0; color: #888; font-size: 14px; }
+    /* 控制按钮固定在底部 */
+    .controls { 
+      margin-top: auto; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      gap: 8px;
+      padding-top: 10px;
+    }
+    .controls button { 
+      background: #ffa500; 
+      border: none; 
+      color: white; 
+      padding: 5px 10px; 
+      border-radius: 5px; 
+      font-size: 18px; 
+    }
+    .controls span {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+      display: inline-block;
+    }
+    #view-order { 
+      margin-top: 20px; 
+      padding: 15px; 
+      width: 100%; 
+      background: #28a745; 
+      color: white; 
+      font-size: 18px; 
+      border: none; 
+      border-radius: 8px; 
+    }
+    /* 数字变化动画效果 */
+    .animate {
+    transform: scale(1.4);
+    transition: transform 0.3s;
+    }
+    .animate:not(.animate) {
+    transform: scale(1);
+    }
+    .sugar-select {
+    margin-top: 8px;
+    text-align: center;
+    }
+    .sugar-select select {
+    padding: 5px;
+    border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>☕ 咖啡菜单</h1>
+  <div class="menu-grid" id="menu"></div>
+  <div id="total-price" style="margin-top: 15px; font-size: 18px; text-align: center;">
+    总价：0 ៛
+  </div>
+  
+
+  <button id="view-order" onclick="submitOrder()">查看订单</button>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const menuItems = [
+      { name: "拿铁", price: 25, img: "https://img.icons8.com/emoji/48/coffee.png" },
+      { name: "美式", price: 20, img: "https://img.icons8.com/emoji/48/hot-beverage.png" },
+      { name: "卡布奇诺", price: 28, img: "https://img.icons8.com/emoji/48/coffee-to-go.png" },
+      { name: "摩卡", price: 30, img: "https://img.icons8.com/emoji/48/chocolate-bar.png" },
+      { name: "焦糖玛奇朵", price: 32, img: "https://img.icons8.com/emoji/48/sugar-cube.png" },
+      { name: "蛋糕", price: 15, img: "https://img.icons8.com/emoji/48/shortcake.png" }
+    ];
+
+    const order = {}; // 原来是数量，现在要变成：{ [idx]: { qty: 1, sugar: "50%" } }
+
+    const menuDiv = document.getElementById("menu");
+    menuItems.forEach((item, idx) => {
+      const div = document.createElement("div");
+      div.className = "menu-item";
+      div.innerHTML = `
+        <img src="${item.img}" alt="${item.name}">
+        <div class="item-name">${item.name}</div>
+        <div class="item-price">៛${item.price}</div>
+        <div class="controls">
+        <button onclick="decrease(${idx})">-</button>
+        <span id="count-${idx}">0</span>
+        <button onclick="increase(${idx})">+</button>
+        </div>
+        <div class="sugar-select">
+        糖：
+        <select id="sugar-${idx}" onchange="setSugar(${idx}, this.value)">
+            <option value="0%">0%</option>
+            <option value="25%" selected>25%</option>
+            <option value="50%">50%</option>
+            <option value="75%">75%</option>
+            <option value="100%">100%</option>
+        </select>
+        </div>
+
+      `;
+      menuDiv.appendChild(div);
+    });
+
+function increase(idx) {
+  if (!order[idx]) order[idx] = { qty: 0, sugar: "25%" };
+  order[idx].qty++;
+  updateCount(idx);
+  updateTotal();
+}
+
+function decrease(idx) {
+  if (order[idx] && order[idx].qty > 0) {
+    order[idx].qty--;
+    updateCount(idx);
+    updateTotal();
+  }
+}
+
+
+function setSugar(idx, value) {
+  if (!order[idx]) order[idx] = { qty: 0, sugar: "25%" };
+  order[idx].sugar = value;
+}
+
+
+
+/* 更新数量时加上动画 */
+function updateCount(idx) {
+  const countSpan = document.getElementById(`count-${idx}`);
+  countSpan.innerText = order[idx]?.qty || 0;
+  countSpan.classList.add("animate");
+  setTimeout(() => countSpan.classList.remove("animate"), 300);
+}
+
+/* 重新计算总价 */
+function updateTotal() {
+  let total = 0;
+  for (const idx in order) {
+    total += order[idx].qty * menuItems[idx].price;
+  }
+  document.getElementById("total-price").innerText = `总价：¥${total}`;
+}
+
+
+function submitOrder() {
+  const items = [];
+
+  for (const idx in order) {
+    const item = order[idx];
+    if (item.qty > 0) {
+      items.push({
+        name: menuItems[idx].name,
+        quantity: item.qty,
+        sugar_level: item.sugar,
+        unit_price: menuItems[idx].price,
+        subtotal: item.qty * menuItems[idx].price
+      });
+    }
+  }
+
+  if (items.length === 0) {
+    alert("请先选择商品再下单！");
+    return;
+  }
+
+  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+  let confirmText = "请确认您的订单：\n\n";
+  items.forEach(item => {
+    confirmText += `${item.name} × ${item.quantity}（糖：${item.sugar_level}） = ¥${item.subtotal}\n`;
+  });
+  confirmText += `\n总价：¥${total}\n\n是否确认提交？`;
+
+  if (!confirm(confirmText)) return;
+
+  const orderData = {
+    items: items,
+    total_price: total
+  };
+
+  if (typeof tg !== 'undefined' && tg.sendData) {
+    tg.sendData(JSON.stringify(orderData));
+    tg.close();
+  } else {
+    console.log("模拟提交:", JSON.stringify(orderData));
+    alert("本地测试模式：模拟发送成功！");
+  }
+}
+ 
+  </script>
+</body>
+</html>
