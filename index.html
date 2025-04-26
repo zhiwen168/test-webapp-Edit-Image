@@ -199,7 +199,6 @@ function updateTotal() {
   document.getElementById("total-price").innerText = `总价：¥${total}`;
 }
 
-
 async function submitOrder() {
   const items = [];
 
@@ -238,7 +237,7 @@ async function submitOrder() {
   };
 
   try {
-    const response = await fetch('https://test-webapp-edit-image-production.up.railway.app:5000/receive_order', {
+    const response = await fetch('https://test-webapp-edit-image-production.up.railway.app/receive_order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
