@@ -158,6 +158,7 @@
       menuDiv.appendChild(div);
     });
 
+
 function increase(idx) {
   if (!order[idx]) order[idx] = { qty: 0, sugar: "25%" };
   order[idx].qty++;
@@ -199,7 +200,7 @@ function updateTotal() {
 }
 
 
-function submitOrder() {
+async function submitOrder() {
   const items = [];
 
   for (const idx in order) {
@@ -230,20 +231,35 @@ function submitOrder() {
 
   if (!confirm(confirmText)) return;
 
+  // 构建订单数据（只有商品，不带用户信息）
   const orderData = {
     items: items,
     total_price: total
   };
 
-  if (typeof tg !== 'undefined' && tg.sendData) {
-    tg.sendData(JSON.stringify(orderData));
-    tg.close();
-  } else {
-    console.log("模拟提交:", JSON.stringify(orderData));
-    alert("本地测试模式：模拟发送成功！");
+  try {
+    const response = await fetch('https://127.0.0.1/receive_order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(orderData)
+    });
+
+    const result = await response.json();
+    if (result.status === "success") {
+      alert("订单提交成功！");
+      Object.keys(order).forEach(key => delete order[key]);
+      updateTotal();
+      document.querySelectorAll('[id^=count-]').forEach(el => el.innerText = 0);
+    } else {
+      alert("提交失败：" + result.message);
+    }
+  } catch (error) {
+    console.error('发送失败', error);
+    alert("发送失败，请稍后重试！");
   }
 }
- 
   </script>
 </body>
 </html>
